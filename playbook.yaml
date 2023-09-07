@@ -1,0 +1,40 @@
+---
+- name: Weekly system reboots and enforcing security guidelines and enforce & revert configuration if changed on localhost
+  hosts: localhost
+  connection: local # Use the local connection for localhost
+
+  tasks:
+    - name: Schedule Weekly System Reboot
+    # Task to schedule a weekly system rebot using a cron job
+      cron: 
+        name: "Weekly System Reboot"
+        minute: "0"
+        hour: "4" # Adjust the desired ti,e for reboot(4 AM for this example)
+        weekday: "6" #6 is for Saturday, adjust as needed
+        job: "shutdown -r now"
+      become: yes
+    - name: Ensure the desired configuration is applied
+      # Your task to enforce the desired configuration goes here
+      # Replace the following example task with your actual configuration
+      shell: echo " Your desired configuraion" > /etc/config_file
+      notify: revert_if_changed
+    - name: Enforce Security Guidelines
+      # Task to enforce security guidelines
+      # Replace the following example taskwith your actual security enforcement task
+      shell: /path/to/enforce_security_guidelines.sh
+
+  handlers:
+    - name: revert_if_changed
+      block:
+        - name: Check if configuration has changed
+        # Use a command to checkif the configuration has changed
+        # You can use 'diff' or nay appropriate method.
+        # Replace the following example command with your actual check
+          shell: diff -q /etc/config_file /etc/config_file_backup
+          when: config_diff.stdout != ""
+      recue: 
+        - name: Handle errors during revert
+          # Handle any errors that might during the revert
+          # Replace the following example task with your error-handling logic
+          debug:
+            msg: "Error Occurred During Revert"   
