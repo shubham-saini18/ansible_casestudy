@@ -1,7 +1,8 @@
 ---
 - name: Weekly system reboots and enforcing security guidelines and enforce & revert configuration if changed on localhost
-  hosts: localhost
-  connection: local # Use the local connection for localhost
+  hosts: 172.31.38.102
+  become: yes
+  gather_facts: yes
 
   tasks:
     - name: Schedule Weekly System Reboot
@@ -11,30 +12,29 @@
         minute: "0"
         hour: "4" # Adjust the desired time for reboot(4 AM for this example)
         weekday: "6" #6 is for Saturday, adjust as needed
-        job: "shutdown -r now"
-      become: yes
-    - name: Ensure the desired configuration is applied
-      # Your task to enforce the desired configuration goes here
-      # Replace the following example task with your actual configuration
-      shell: echo " Your desired configuraion" > /etc/config_file
-      notify: revert_if_changed
-    - name: Enforce Security Guidelines
-      # Task to enforce security guidelines
-      # Replace the following example taskwith your actual security enforcement task
-      shell: /path/to/enforce_security_guidelines.sh
+        user: root
+        job: "/sbin/reboot"
+      register: cron_result
+      when: ansible_os_family == 'Amazon linux'
 
-  handlers:
-    - name: revert_if_changed
-      block:
-        - name: Check if configuration has changed
-        # Use a command to checkif the configuration has changed
-        # You can use 'diff' or may appropriate method.
-        # Replace the following example command with your actual check
-          shell: diff -q /etc/config_file /etc/config_file_backup
-          when: config_diff.stdout != ""
-      recue: 
-        - name: Handle errors during revert
-          # Handle any errors that might during the revert
-          # Replace the following example task with your error-handling logic
-          debug:
-            msg: "Error Occurred During Revert"   
+    - name: Ensure the Weekly Reboot is applied
+      command: crontab -u root -l 
+      register: current_cron
+      when: ansible_os_family == 'Amazon linux'
+
+    - name: Display Current Cron Job
+      debug:
+        var: current_cron.stdout_lines
+    when: ansible_os_family == 'Amazon linux'
+
+    - name: Reboot if Scheduled
+      command: "/sbin/reboot"
+      when: "'Reboot weekly' in current_cron.stdout"
+      async: 0
+      poll: 0
+      ignore_errors: true
+
+    - name: Ensure Reboot
+      wait_for_connection:
+        timeout: 300
+      when: "'Reboot Weekly' in current_cron.stdout"  
