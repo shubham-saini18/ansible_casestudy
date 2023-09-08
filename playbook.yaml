@@ -9,7 +9,7 @@
       cron: 
         name: "Weekly System Reboot"
         minute: "0"
-        hour: "4" # Adjust the desired ti,e for reboot(4 AM for this example)
+        hour: "4" # Adjust the desired time for reboot(4 AM for this example)
         weekday: "6" #6 is for Saturday, adjust as needed
         job: "shutdown -r now"
       become: yes
@@ -28,7 +28,7 @@
       block:
         - name: Check if configuration has changed
         # Use a command to checkif the configuration has changed
-        # You can use 'diff' or nay appropriate method.
+        # You can use 'diff' or may appropriate method.
         # Replace the following example command with your actual check
           shell: diff -q /etc/config_file /etc/config_file_backup
           when: config_diff.stdout != ""
